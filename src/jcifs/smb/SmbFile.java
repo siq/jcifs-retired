@@ -2975,4 +2975,37 @@ if (this instanceof SmbNamedPipe) {
         return getSecurity(false);
     }
 
+
+     public SID getOwnerUser() throws IOException {
+
+         int f = open0(O_RDONLY, READ_CONTROL, 0, isDirectory() ? 1 : 0);
+
+         /*
+          * NtTrans Query Security Desc Request / Response
+          */
+
+         NtTransQuerySecurityDesc request = new NtTransQuerySecurityDesc(f, 0x01);
+         NtTransQuerySecurityDescResponse response = new NtTransQuerySecurityDescResponse();
+         send(request, response);
+
+         close(f, 0L);
+         return response.securityDescriptor.owner_user;
+     }
+
+         public SID getOwnerGroup() throws IOException {
+
+         int f = open0(O_RDONLY, READ_CONTROL, 0, isDirectory() ? 1 : 0);
+
+         /*
+          * NtTrans Query Security Desc Request / Response
+          */
+
+         NtTransQuerySecurityDesc request = new NtTransQuerySecurityDesc(f, 0x02);
+         NtTransQuerySecurityDescResponse response = new NtTransQuerySecurityDescResponse();
+         send(request, response);
+
+         close(f, 0L);
+         return response.securityDescriptor.owner_group;
+     }
+
 }
