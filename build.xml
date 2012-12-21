@@ -2,7 +2,21 @@
 
     <property name="version" value="1.3.17"/>
     <property name="reldate" value="Oct 18, 2011"/>
-
+    <property file="build.properties"/>
+    <property name="src" location="src"/>
+    <property name="build" location="build"/>
+    <property name="dist" location="dist"/>
+    <property name="doc" location="doc"/>
+    <property name="lib" location="lib"/>
+    <property name="test" location="test"/>
+    <property name="lib" location="lib"/>
+    	
+    <path id="classpath">
+        <fileset dir="${lib}">
+            <include name="**/*.jar"/>
+        </fileset>
+    </path>
+	
     <target name="usage">
         <echo>
 Available Build Targets:
@@ -30,35 +44,24 @@ dependencies: Checks that all class dependencies are met.
        usage: Displays this message.</echo>
     </target>
 
-    <target name="hasServlet" unless="hasServlet">
-        <fail>
-
-    The Java Servlet API classes could not be found.  These files can be
-    obtained from:
-
-        http://java.sun.com/products/servlet/download.html
-        </fail>
+    <target name="clean">
+        <deltree dir="build"/>
+        <deltree dir="dist"/>
     </target>
-
-    <target name="dependencies">
-        <available classname="javax.servlet.Servlet" property="hasServlet"/>
-        <antcall target="hasServlet"/>
+        	
+    <target name="init">
+        <mkdir dir="${build}"/>
+    	<record name="build.log" loglevel="verbose" append="false"/>
     </target>
+        	
 
-    <target name="compile" depends="dependencies">
-        <mkdir dir="build"/>
-        <javac srcdir="src"
-            destdir="build"
-            source="1.5"
-            target="1.5"
-            fork="yes"
-            executable="/usr/local/java5/bin/javac"
-            compiler="javac1.5"
-            debug="on">
-<!--
+	<target name="compile" depends="init">
+	    <record name="log.txt" action="start"/>
+		 <javac srcdir="${src}" destdir="${build}" includeantruntime="false">
+		    <classpath refid="classpath"/>
             <compilerarg line="-Xlint:deprecation -Xlint:unchecked"/>
--->
-        </javac>
+		</javac>
+	    <record name="log.txt" action="stop"/>
         <copy file="src/jcifs/util/mime.map" tofile="build/jcifs/util/mime.map" overwrite="yes"/>
         <copy file="src/jcifs/http/ne.css" tofile="build/jcifs/http/ne.css" overwrite="yes"/>
     </target>
@@ -115,10 +118,6 @@ dependencies: Checks that all class dependencies are met.
     </target>
 
     <target name="all" depends="jar,docs,javadoc"/>
-
-    <target name="clean">
-        <delete dir="build" quiet="true"/>
-    </target>
 
     <target name="allclean" depends="clean">
         <delete quiet="true">
