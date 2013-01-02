@@ -26,6 +26,12 @@ abstract class SmbComNtTransaction extends SmbComTransaction {
 
     static final int NT_TRANSACT_QUERY_SECURITY_DESC = 6;
 
+    //-------------- MPRV PATCH -------------
+    /**
+     * set security transaction code
+     */
+    static final int NT_TRANSACT_SET_SECURITY_DESC = 3;
+
     int function;
 
     SmbComNtTransaction() {
