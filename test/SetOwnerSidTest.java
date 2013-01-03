@@ -7,25 +7,24 @@ public class SetOwnerSidTest
     public void getOwnerSidTest1() throws Exception
     {
         NtlmPasswordAuthentication auth = new NtlmPasswordAuthentication("storediq", "testadmin", "test123");
-        SmbFile smbfile = new SmbFile("smb://172.17.18.5/aevans-a/untitled text 1.txt", auth);
+        SmbFile smbfile = new SmbFile("smb://172.17.18.5/aevans-a/test4.txt", auth);
 
-        SecurityDescriptor sd = smbfile.getSecurityDescriptor(false);
+//        SID sid = new SID("S-1-5-21-1870922669-3917736479-4101635975-1001");
+        SID sid = SID.getFromName("172.17.18.5", auth, "storediq\\aevans");
 
-        int readAccessRight = 0x00020000;
-        SID sid = new SID("S-1-5-21-1547161642-115176313-682003330-4162");
-
-        smbfile.revokePermission(sd, sid, readAccessRight);
-
+        System.out.println("update owner: " + smbfile.updateOwner(sid));
     }
 
     @Test
     public void getOwnerSidTest2() throws Exception
     {
         NtlmPasswordAuthentication auth = new NtlmPasswordAuthentication("storediq", "testadmin", "test123");
-        SmbFile smbfile = new SmbFile("smb://172.17.18.5/aevans-a/untitled text 1.txt", auth);
+        SmbFile smbfile = new SmbFile("smb://172.17.18.5/aevans-a/test4.txt", auth);
 
         SID owner = smbfile.getOwnerUser();
         SID group = smbfile.getOwnerGroup();
+
+        owner.resolve("siq-dc3.storediq.com", auth);
 
         System.out.println(String.format("Owner: %s", owner));
         System.out.println(String.format("Group: %s", group));

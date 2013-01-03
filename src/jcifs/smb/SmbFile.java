@@ -3083,6 +3083,28 @@ if (this instanceof SmbNamedPipe) {
 
     }
 
+    public int updateOwner(SID owner) throws IOException {
+        int f;
+
+        f = open0(O_RDWR, WRITE_OWNER, 0, isDirectory() ? 1 : 0);
+
+        /*
+         * NtTrans Update Security Desc Request / Response
+         */
+
+        NtTransSetSecurityDescOwner request = new NtTransSetSecurityDescOwner(f, owner);
+        NtTransSetSecurityDescResponse response = new NtTransSetSecurityDescResponse();
+
+        try {
+            send(request, response);
+        } finally {
+            close(f, 0L);
+        }
+
+        return response.errorCode;
+
+    }
+
      public SID getOwnerUser() throws IOException {
 
          int f = open0(O_RDONLY, READ_CONTROL, 0, isDirectory() ? 1 : 0);

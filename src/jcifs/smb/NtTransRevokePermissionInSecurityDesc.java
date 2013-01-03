@@ -14,7 +14,8 @@ import jcifs.util.Hexdump;
  * <li>mask - the permissions that should be revoked</li>
  *
  */
-class NtTransRevokePermissionInSecurityDesc extends NtTransSetSecurityDesc {
+class NtTransRevokePermissionInSecurityDesc extends NtTransSetSecurityDescAccess
+{
 
     NtTransRevokePermissionInSecurityDesc(int fid, int securityInformation, SecurityDescriptor securityDescriptor, SID sid, int mask) {
         super(fid, securityInformation, securityDescriptor, sid, mask);

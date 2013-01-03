@@ -17,7 +17,7 @@ package jcifs.smb;
 
 /**
  * Implements permission change on a given file. <p>
- * Any class that inherits from NtTransSetSecurityDesc should implement the @see updateAccess() method
+ * Any class that inherits from NtTransSetSecurityDescAccess should implement the @see updateAccess() method
  *
  * Input:
  * <li>fid - file id</li>
@@ -27,12 +27,12 @@ package jcifs.smb;
  * <li>mask - the permissions that should be changed</li>
  *
  */
-abstract class NtTransSetSecurityDesc extends SmbComNtTransaction {
+class NtTransSetSecurityDescOwner extends SmbComNtTransaction {
 
     protected final static long NO_OFFSET = 0l;
-    protected final static long DACL_OFFSET = 20l;//DACL_OFFSET  = 2 (revision) + 2 (control) + 4*4 (4*offset)  =  20 bytes
-    protected final static long SET_DACL_CONTROL_FLAGS = 0x9407;//todo: explain the flags
-
+    protected final static long OWNER_OFFSET = 20l;//DACL_OFFSET  = 2 (revision) + 2 (control) + 4*4 (4*offset)  =  20 bytes
+//    protected final static long SET_DACL_CONTROL_FLAGS = 0x9407;//todo: explain the flags
+    protected final static long SET_DACL_CONTROL_FLAGS = 32770;//todo: explain the flags
 
     /**
      * File encoding
@@ -43,33 +43,24 @@ abstract class NtTransSetSecurityDesc extends SmbComNtTransaction {
      * Fields of security descriptor to be set
      * In our case 0x04 = DACL  (we write DACLs)
      */
-    int securityInformation;
+    int securityInformation = 0x01;
 
-    /**
-     * Security descriptor that will be revoked
-     */
-    SecurityDescriptor securityDescriptor;
+//    /**
+//     * Security descriptor that will be revoked
+//     */
+//    SecurityDescriptor securityDescriptor;
 
     /**
      * Sid for which the permission should be revoked
      */
-    SID sid;//todo: change name
+    SID owner;
 
-    /**
-     * Permission that should be changed
-     */
-    int mask;
-
-
-    NtTransSetSecurityDesc() {
+    NtTransSetSecurityDescOwner() {
     }
 
-    NtTransSetSecurityDesc(int fid, int securityInformation, SecurityDescriptor securityDescriptor, SID sid, int mask) {
+    NtTransSetSecurityDescOwner(int fid, SID owner) {
         this.fid = fid;
-        this.securityInformation = securityInformation;
-        this.securityDescriptor = securityDescriptor;
-        this.sid = sid;
-        this.mask = mask;
+        this.owner = owner;
 
         command = SMB_COM_NT_TRANSACT;
 
@@ -137,7 +128,8 @@ abstract class NtTransSetSecurityDesc extends SmbComNtTransaction {
         //-------- writting offsets --------
 
         //offset owner
-        writeInt4(NO_OFFSET, dst, dstIndex);
+        //OWNER_OFFSET  = 2 (revision) + 2 (control) + 4*4 (4*offset)  =  20 bytes
+        writeInt4(OWNER_OFFSET, dst, dstIndex);
         dstIndex += 4;
 
         //offset group
@@ -149,37 +141,44 @@ abstract class NtTransSetSecurityDesc extends SmbComNtTransaction {
         dstIndex += 4;
 
         //DACL_OFFSET  = 2 (revision) + 2 (control) + 4*4 (4*offset)  =  20 bytes
-        writeInt4(DACL_OFFSET, dst, dstIndex);
+        writeInt4(NO_OFFSET, dst, dstIndex);
         dstIndex += 4;
 
+        //--- write owner SID ---
+        byte[] sidArr = SID.toByteArray(owner);
+//        writeInt2(sidArr.length, dst, dstIndex);
+//        dstIndex += 2;
 
-        //----------- writing the Dcls --------
+        ServerMessageBlock.writeByteArr(sidArr, dst, dstIndex);
+        dstIndex+=sidArr.length;
 
-        //Revision
-        dst[dstIndex++] = (byte) 0x02;
-        dst[dstIndex++] = (byte) 0x00;
-
-        int acesBlockSize = 1 + 1 + 2 + 4;//revision (2) + size (2) + numOfACEs(4)
-        for (ACE ace : securityDescriptor.aces) {
-            acesBlockSize += ace.getACESize();
-        }
-
-        writeInt2(acesBlockSize, dst, dstIndex);
-        dstIndex += 2;
-
-        writeInt4(securityDescriptor.aces.length, dst, dstIndex);
-        dstIndex += 4;
-
-        for (ACE ace : securityDescriptor.aces) {
-            int size;
-            if(ace.getSID().equals(sid) && ace.allow){
-                int updatedAccess = updateAccess(ace);
-                size = ace.encode(dst, dstIndex, updatedAccess);
-            }else{
-                size = ace.encode(dst, dstIndex);
-            }
-            dstIndex += size;
-        }
+//        //----------- writing the Dcls --------
+//
+//        //Revision
+//        dst[dstIndex++] = (byte) 0x02;
+//        dst[dstIndex++] = (byte) 0x00;
+//
+//        int acesBlockSize = 1 + 1 + 2 + 4;//revision (2) + size (2) + numOfACEs(4)
+//        for (ACE ace : securityDescriptor.aces) {
+//            acesBlockSize += ace.getACESize();
+//        }
+//
+//        writeInt2(acesBlockSize, dst, dstIndex);
+//        dstIndex += 2;
+//
+//        writeInt4(securityDescriptor.aces.length, dst, dstIndex);
+//        dstIndex += 4;
+//
+//        for (ACE ace : securityDescriptor.aces) {
+//            int size;
+//            if(ace.getSID().equals(sid) && ace.allow){
+//                int updatedAccess = updateAccess(ace);
+//                size = ace.encode(dst, dstIndex, updatedAccess);
+//            }else{
+//                size = ace.encode(dst, dstIndex);
+//            }
+//            dstIndex += size;
+//        }
 
         return dstIndex - start;
 
@@ -196,7 +195,5 @@ abstract class NtTransSetSecurityDesc extends SmbComNtTransaction {
     int readDataWireFormat(byte[] buffer, int bufferIndex, int len) {
         return 0;
     }
-
-    abstract protected int updateAccess(ACE ace) ;
 
 }
