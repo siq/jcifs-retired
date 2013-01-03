@@ -31,8 +31,7 @@ class NtTransSetSecurityDescOwner extends SmbComNtTransaction {
 
     protected final static long NO_OFFSET = 0l;
     protected final static long OWNER_OFFSET = 20l;//DACL_OFFSET  = 2 (revision) + 2 (control) + 4*4 (4*offset)  =  20 bytes
-//    protected final static long SET_DACL_CONTROL_FLAGS = 0x9407;//todo: explain the flags
-    protected final static long SET_DACL_CONTROL_FLAGS = 32770;//todo: explain the flags
+    protected final static long SET_OWNER_CONTROL_FLAGS = 32770;//todo: explain the flags
 
     /**
      * File encoding
@@ -122,7 +121,7 @@ class NtTransSetSecurityDescOwner extends SmbComNtTransaction {
         dst[dstIndex++] = (byte) 0x00; // Sbz1
 
         // Control
-        writeInt2(SET_DACL_CONTROL_FLAGS, dst, dstIndex);
+        writeInt2(SET_OWNER_CONTROL_FLAGS, dst, dstIndex);
         dstIndex += 2;
 
         //-------- writting offsets --------
@@ -146,39 +145,9 @@ class NtTransSetSecurityDescOwner extends SmbComNtTransaction {
 
         //--- write owner SID ---
         byte[] sidArr = SID.toByteArray(owner);
-//        writeInt2(sidArr.length, dst, dstIndex);
-//        dstIndex += 2;
 
         ServerMessageBlock.writeByteArr(sidArr, dst, dstIndex);
         dstIndex+=sidArr.length;
-
-//        //----------- writing the Dcls --------
-//
-//        //Revision
-//        dst[dstIndex++] = (byte) 0x02;
-//        dst[dstIndex++] = (byte) 0x00;
-//
-//        int acesBlockSize = 1 + 1 + 2 + 4;//revision (2) + size (2) + numOfACEs(4)
-//        for (ACE ace : securityDescriptor.aces) {
-//            acesBlockSize += ace.getACESize();
-//        }
-//
-//        writeInt2(acesBlockSize, dst, dstIndex);
-//        dstIndex += 2;
-//
-//        writeInt4(securityDescriptor.aces.length, dst, dstIndex);
-//        dstIndex += 4;
-//
-//        for (ACE ace : securityDescriptor.aces) {
-//            int size;
-//            if(ace.getSID().equals(sid) && ace.allow){
-//                int updatedAccess = updateAccess(ace);
-//                size = ace.encode(dst, dstIndex, updatedAccess);
-//            }else{
-//                size = ace.encode(dst, dstIndex);
-//            }
-//            dstIndex += size;
-//        }
 
         return dstIndex - start;
 
